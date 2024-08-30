@@ -9,6 +9,7 @@ import br.com.kjscripts.screenmatch.service.ConvertData;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -23,7 +24,7 @@ public class Main {
     private Scanner reading = new Scanner(System.in);
 
     private final String CLIENT_URL = "https://omdbapi.com/?t=";
-    private final String API_KEY = "&apikey=ApiKeyAqui";
+    private final String API_KEY = "&apikey=ApiKey";
 
     public void showMenu() {
         System.out.println("Digite o nome da série para buscar:");
@@ -66,5 +67,19 @@ public class Main {
                 .collect(Collectors.toList());
 
         episodes.forEach(System.out::println);
+
+        System.out.println("Digite um ano para ver os episódios lançados a partir dele");
+        var year = reading.nextInt();
+        reading.nextLine();
+
+        LocalDate getDate = LocalDate.of(year, 1, 1);
+
+        episodes.stream()
+                .filter(e ->e.getReleaseDate() != null && e.getReleaseDate().isAfter(getDate))
+                .forEach(e -> System.out.println(
+                        "\nTemporada: " + e.getSeason()
+                        + "\nEpisódio: " + e.getNumber()
+                        + "\nData de lançamento: " + e.formatReleaseDate(e.getReleaseDate())
+                ));
     }
 }

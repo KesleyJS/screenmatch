@@ -69,18 +69,22 @@ public class Episode {
         this.releaseDate = releaseDate;
     }
 
-    private String formatReleaseDate(LocalDate date) {
-        return DATE_FORMATTER.format(date);
+    public String formatReleaseDate(LocalDate date) {
+        if (date != null) {
+            return DATE_FORMATTER.format(date);
+        } else {
+            return "Indisponível";
+        }
+
     }
 
     @Override
     public String toString() {
-        String formattedReleaseDate = releaseDate != null ? DATE_FORMATTER.format(releaseDate) : "Indisponível";
 
         return "Temporada: " + season
                 + "\nEpisódio: " + number
                 + "\nTítulo: " + title
                 + "\nAvaliação" + rating
-                + "\nData de lançamento: " + formattedReleaseDate + "\n";
+                + "\nData de lançamento: " + formatReleaseDate(releaseDate) + "\n";
     }
 }
