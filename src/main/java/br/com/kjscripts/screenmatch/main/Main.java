@@ -45,6 +45,7 @@ public class Main {
                     3 - Listar séries buscadas
                     4 - Buscar série pelo nome
                     5 - Buscar séries pelo ator
+                    6 - Buscar as 5 melhores séries
                     
                     0 - Sair
                     """;
@@ -68,6 +69,9 @@ public class Main {
                     break;
                 case 5:
                     getSeriesByActor();
+                    break;
+                case 6:
+                    getTopFiveSeries();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -164,6 +168,14 @@ public class Main {
 
         System.out.println("Séries que " + actorName + " atuou");
         fetchedSeries.forEach((s ->
+                System.out.println(s.getTitle() + " avaliação: " + s.getRating())));
+    }
+
+
+    private void getTopFiveSeries() {
+        List<Serie> topFiveSeries = serieRepository.findTop5ByOrderByRatingDesc();
+
+        topFiveSeries.forEach((s ->
                 System.out.println(s.getTitle() + " avaliação: " + s.getRating())));
     }
 
