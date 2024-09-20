@@ -1,5 +1,6 @@
 package br.com.kjscripts.screenmatch.main;
 
+import br.com.kjscripts.screenmatch.model.Episode;
 import br.com.kjscripts.screenmatch.model.SeasonData;
 import br.com.kjscripts.screenmatch.model.Serie;
 import br.com.kjscripts.screenmatch.model.SerieData;
@@ -10,6 +11,7 @@ import br.com.kjscripts.screenmatch.service.ConvertData;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -27,6 +29,8 @@ public class Main {
 
     private String apiKey;
 
+    List<Serie> series = new ArrayList<>();
+
     public Main(String apiKey, SerieRepository serieRepository) {
         this.apiKey = apiKey;
         this.serieRepository = serieRepository;
@@ -36,12 +40,14 @@ public class Main {
         var choice = -1;
         while (choice != 0) {
             var menu = """
-                1 - Buscar séries
-                2 - Buscar episódios
-                3 - Listar séries buscadas
-                
-                0 - Sair
-                """;
+                    1 - Buscar séries
+                    2 - Buscar episódios
+                    3 - Listar séries buscadas
+                    4 - Buscar série pelo nome
+                    5 - Buscar séries pelo ator
+                    
+                    0 - Sair
+                    """;
 
             System.out.println(menu);
             choice = reading.nextInt();
@@ -56,6 +62,12 @@ public class Main {
                     break;
                 case 3:
                     listFetchedSeries();
+                    break;
+                case 4:
+                    findSerieByTitle();
+                    break;
+                case 5:
+                    getSeriesByActor();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -85,25 +97,75 @@ public class Main {
     }
 
     private void getEpisodeBySerie() {
-        SerieData serieData = getSerieData();
-        List<SeasonData> seasons = new ArrayList<>();
+        listFetchedSeries();
+        System.out.println("Digite o nome de uma série: ");
+        var serieName = reading.nextLine();
 
-        for (int i = 1; i <= serieData.totalSeasons(); i++) {
-            // Encode the serieTitle for safe inclusion in the URL
-            String encodedSerieTitle = URLEncoder.encode(serieData.title(), StandardCharsets.UTF_8);
-            var json = consumeApi.getData(CLIENT_URL + encodedSerieTitle + "&season=" + i + "&apikey=" + apiKey);
-            SeasonData seasonData = convertData.getData(json, SeasonData.class);
-            seasons.add(seasonData);
+        Optional<Serie> serie = series.stream()
+                .filter(s -> s.getTitle().toLowerCase().contains(serieName.toLowerCase()))
+                .findFirst();
+
+        if (serie.isPresent()) {
+
+            var fetchedSerie = serie.get();
+            List<SeasonData> seasons = new ArrayList<>();
+
+            for (int i = 1; i <= fetchedSerie.getTotalSeasons(); i++) {
+                // Encode the serieTitle for safe inclusion in the URL
+                String encodedSerieTitle = URLEncoder.encode(fetchedSerie.getTitle(), StandardCharsets.UTF_8);
+                var json = consumeApi.getData(CLIENT_URL + encodedSerieTitle + "&season=" + i + "&apikey=" + apiKey);
+                SeasonData seasonData = convertData.getData(json, SeasonData.class);
+                seasons.add(seasonData);
+            }
+            seasons.forEach(System.out::println);
+
+            List<Episode> episodes = seasons.stream()
+                    .flatMap(s -> s.episodes().stream()
+                            .map(e -> new Episode(s.number(), e)))
+                    .collect(Collectors.toList());
+
+            fetchedSerie.setEpisodes(episodes);
+
+            serieRepository.save(fetchedSerie);
+        } else {
+            System.out.println("Série não encontrada");
         }
-        seasons.forEach(System.out::println);
     }
 
     private void listFetchedSeries() {
-        List<Serie> series = serieRepository.findAll();
+        series = serieRepository.findAll();
 
         series.stream()
                 .sorted(Comparator.comparing(Serie::getGenre))
                 .forEach(System.out::println);
     }
+
+    private void findSerieByTitle() {
+        System.out.println("Digite o nome de uma série");
+        var serieName = reading.nextLine();
+
+        Optional<Serie> fetchedSerie = serieRepository.findByTitleContainingIgnoreCase(serieName);
+
+        if (fetchedSerie.isPresent()) {
+            System.out.println("Dados da série: \n" + fetchedSerie.get());
+        } else  {
+            System.out.println("Série não encontrada");
+        }
+    }
+
+    private void getSeriesByActor() {
+        System.out.println("Digite o nome de um ator");
+        var actorName = reading.nextLine();
+
+        System.out.println("Avaliações a partir de qual valor?");
+        var rating = reading.nextDouble();
+
+        List<Serie> fetchedSeries = serieRepository.findByActorsContainingIgnoreCaseAndRatingGreaterThanEqual(actorName, rating);
+
+        System.out.println("Séries que " + actorName + " atuou");
+        fetchedSeries.forEach((s ->
+                System.out.println(s.getTitle() + " avaliação: " + s.getRating())));
+    }
+
 }
 

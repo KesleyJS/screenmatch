@@ -1,18 +1,27 @@
 package br.com.kjscripts.screenmatch.model;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+@Entity
+@Table(name = "episodes")
 public class Episode {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private Integer season;
     private String title;
     private Integer number;
     private Double rating;
     private LocalDate releaseDate;
+    @ManyToOne
+    private Serie serie;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
+    public Episode() {}
     public Episode(Integer numberSeason, EpisodeData episodeData) {
         this.season = numberSeason;
         this.title = episodeData.title();
@@ -27,6 +36,22 @@ public class Episode {
         } catch (DateTimeParseException e) {
             this.releaseDate = null;
         }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Serie getSerie() {
+        return serie;
+    }
+
+    public void setSerie(Serie serie) {
+        this.serie = serie;
     }
 
     public Integer getSeason() {
@@ -81,7 +106,7 @@ public class Episode {
     @Override
     public String toString() {
 
-        return "Temporada: " + season
+        return "\nTemporada: " + season
                 + "\nEpisódio: " + number
                 + "\nTítulo: " + title
                 + "\nAvaliação" + rating
